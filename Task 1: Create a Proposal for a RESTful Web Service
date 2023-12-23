@@ -1,0 +1,152 @@
+// Employee.java
+package com.example.demo;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+@Entity
+public class Employee {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String firstName;
+    private String lastName;
+    private String email;
+
+    public Employee() {}
+
+    public Employee(String firstName, String lastName, String email) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+    }
+
+    // Getters and setters, and toString methods
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    @Override
+    public String toString() {
+        return "Employee{" +
+                "id=" + id +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", email='" + email + '\'' +
+                '}';
+    }
+}
+
+
+
+
+// EmployeeRepository.java
+package com.example.demo;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface EmployeeRepository extends JpaRepository<Employee, Long> {
+}
+
+
+
+
+// EmployeeService.java
+package com.example.demo;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class EmployeeService {
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
+    public List<Employee> getAllEmployees() {
+        return employeeRepository.findAll();
+    }
+
+    public void addEmployee(Employee employee) {
+        employeeRepository.save(employee);
+    }
+}
+
+
+
+
+// EmployeeController.java
+package com.example.demo;
+
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.net.URI;
+import java.util.List;
+
+@RestController
+@RequestMapping("/employees")
+@Api(tags = "Employee Management")
+public class EmployeeController {
+
+    @Autowired
+    private EmployeeService employeeService;
+
+    @GetMapping(produces = "application/json")
+    @ApiOperation("Get the list of all employees")
+    public List<Employee> getEmployees() {
+        return employeeService.getAllEmployees();
+    }
+
+    @PostMapping(consumes = "application/json", produces = "application/json")
+    @ApiOperation("Add a new employee")
+    public ResponseEntity<Object> addEmployee(@RequestBody Employee employee) {
+        employeeService.addEmployee(employee);
+
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(employee.getId())
+                .toUri();
+
+        return ResponseEntity.created(location).build();
+    }
+}
